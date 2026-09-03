@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+﻿import { useEffect, useState } from 'react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, router, useForm } from '@inertiajs/react';
 
@@ -13,6 +13,7 @@ export default function Dashboard({ stats = {}, bookings = [], events = [] }) {
         start_date: '',
         end_date: '',
         layout_rows: 'A01, A02\nA03, A04',
+        stall_price: '150000',
     });
 
     const generateLayout = (rows, cols) => {
@@ -233,6 +234,19 @@ export default function Dashboard({ stats = {}, bookings = [], events = [] }) {
                                     value={eventForm.data.end_date}
                                     onChange={(e) => eventForm.setData('end_date', e.target.value)}
                                     className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-800 focus:border-emerald-500 focus:ring-emerald-500"
+                                />
+                            </div>
+
+                            <div>
+                                <label className="mb-2 block text-sm font-semibold text-slate-700">Harga Stand (Rp)</label>
+                                <input
+                                    type="number"
+                                    min="0"
+                                    step="1000"
+                                    value={eventForm.data.stall_price}
+                                    onChange={(e) => eventForm.setData('stall_price', e.target.value)}
+                                    className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-800 focus:border-emerald-500 focus:ring-emerald-500"
+                                    placeholder="150000"
                                 />
                             </div>
 

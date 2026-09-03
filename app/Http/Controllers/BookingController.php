@@ -27,9 +27,9 @@ class BookingController extends Controller
         return Inertia::render('Dashboard', [
             'bookings' => $bookings->map(function ($booking) {
                 return [
-                    'id' => $booking->id,
-                    'stall_number' => $booking->stall?->stall_number,
-                    'price' => (float) ($booking->stall?->price ?? 0),
+                    'id'             => $booking->id,
+                    'stall_number'   => $booking->stall?->stall_number,
+                    'price'          => (float) ($booking->stall?->price ?? 0),
                     'payment_status' => $booking->payment_status,
                 ];
             })->all(),
@@ -40,47 +40,46 @@ class BookingController extends Controller
     {
         abort_unless(auth()->check() && auth()->user()->isAdmin(), 403);
 
-        $stalls = Stall::all();
+        $stalls   = Stall::all();
         $bookings = Booking::with('stall', 'user', 'documents')->latest()->limit(10)->get();
-        $events = BazaarEvent::with('organizer')->latest('start_date')->get();
+        $events   = BazaarEvent::with('organizer')->latest('start_date')->get();
 
         $stats = [
-            'total_stalls' => $stalls->count(),
-            'available' => $stalls->where('status', 'available')->count(),
-            'pending' => $stalls->where('status', 'pending')->count(),
-            'booked' => $stalls->where('status', 'booked')->count(),
+            'total_stalls'  => $stalls->count(),
+            'available'     => $stalls->where('status', 'available')->count(),
+            'pending'       => $stalls->where('status', 'pending')->count(),
+            'booked'        => $stalls->where('status', 'booked')->count(),
             'paid_bookings' => $bookings->where('payment_status', 'paid')->count(),
             'total_revenue' => $bookings
-                ->filter(fn ($booking) => $booking->payment_status === 'paid')
-                ->sum(fn ($booking) => (float) ($booking->stall?->price ?? 0)),
+                ->filter(fn ($b) => $b->payment_status === 'paid')
+                ->sum(fn ($b) => (float) ($b->stall?->price ?? 0)),
         ];
 
         return Inertia::render('Admin/Dashboard', [
-            'stats' => $stats,
-            'events' => $events->map(function ($event) {
+            'stats'    => $stats,
+            'events'   => $events->map(function ($event) {
                 return [
-                    'id' => $event->id,
-                    'name' => $event->name,
-                    'location' => $event->location,
-                    'start_date' => $event->start_date?->toDateString(),
-                    'end_date' => $event->end_date?->toDateString(),
-                    'layout' => $event->layout ?? [],
-                    'is_active' => (bool) $event->is_active,
+                    'id'             => $event->id,
+                    'name'           => $event->name,
+                    'location'       => $event->location,
+                    'start_date'     => $event->start_date?->toDateString(),
+                    'end_date'       => $event->end_date?->toDateString(),
+                    'layout'         => $event->layout ?? [],
+                    'is_active'      => (bool) $event->is_active,
                     'organizer_name' => $event->organizer?->name ?? 'Admin',
                 ];
             })->all(),
             'bookings' => $bookings->map(function ($booking) {
                 $proof = $booking->documents->last();
-
                 return [
-                    'id' => $booking->id,
-                    'user_name' => $booking->user?->name,
-                    'stall_number' => $booking->stall?->stall_number,
-                    'price' => (float) ($booking->stall?->price ?? 0),
-                    'payment_status' => $booking->payment_status,
-                    'payment_method' => $booking->payment_method,
+                    'id'                 => $booking->id,
+                    'user_name'          => $booking->user?->name,
+                    'stall_number'       => $booking->stall?->stall_number,
+                    'price'              => (float) ($booking->stall?->price ?? 0),
+                    'payment_status'     => $booking->payment_status,
+                    'payment_method'     => $booking->payment_method,
                     'payment_proof_name' => $proof?->document_name,
-                    'booking_date' => $booking->booking_date,
+                    'booking_date'       => $booking->booking_date,
                 ];
             })->all(),
         ]);
@@ -96,15 +95,12 @@ class BookingController extends Controller
 
         $request->validate([
             'payment_method' => ['required', 'in:bank_transfer,ewallet,dana,gopay,shopeepay,ovo,linkaja,credit_card,cash_on_site'],
-            'payment_proof' => [
-                'nullable',
-                'file',
-                'mimes:pdf,jpg,jpeg,png',
-                'max:2048',
-            ],
+            'payment_proof'  => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:2048'],
         ]);
 
-        $requiresProof = in_array($request->payment_method, ['bank_transfer', 'ewallet', 'dana', 'gopay', 'shopeepay', 'ovo', 'linkaja', 'credit_card'], true);
+        $requiresProof = in_array($request->payment_method, [
+            'bank_transfer', 'ewallet', 'dana', 'gopay', 'shopeepay', 'ovo', 'linkaja', 'credit_card',
+        ], true);
 
         if ($requiresProof && !$request->hasFile('payment_proof')) {
             $booking->update([
@@ -117,7 +113,6 @@ class BookingController extends Controller
         }
 
         $proofPath = null;
-
         if ($request->hasFile('payment_proof')) {
             $proofPath = $request->file('payment_proof')->storeAs(
                 'payment-proofs/' . $booking->id,
@@ -135,10 +130,10 @@ class BookingController extends Controller
 
             if ($proofPath) {
                 BookingDocument::create([
-                    'booking_id' => $booking->id,
+                    'booking_id'    => $booking->id,
                     'document_name' => 'Bukti Pembayaran - ' . $request->payment_method,
-                    'file_path' => $proofPath,
-                    'mime_type' => $request->file('payment_proof')->getClientMimeType(),
+                    'file_path'     => $proofPath,
+                    'mime_type'     => $request->file('payment_proof')->getClientMimeType(),
                 ]);
             }
         });
@@ -171,10 +166,10 @@ class BookingController extends Controller
         );
 
         BookingDocument::create([
-            'booking_id' => $booking->id,
+            'booking_id'    => $booking->id,
             'document_name' => $request->file('document')->getClientOriginalName(),
-            'file_path' => $path,
-            'mime_type' => $request->file('document')->getClientMimeType(),
+            'file_path'     => $path,
+            'mime_type'     => $request->file('document')->getClientMimeType(),
         ]);
 
         return redirect()->route('bookings.show', $booking->id)
@@ -186,39 +181,48 @@ class BookingController extends Controller
         abort_unless(auth()->check() && auth()->user()->isOrganizer(), 403);
 
         $data = $request->validate([
-            'name' => ['required', 'string', 'max:255'],
-            'location' => ['nullable', 'string', 'max:255'],
-            'start_date' => ['required', 'date'],
-            'end_date' => ['required', 'date', 'after_or_equal:start_date'],
-            'layout' => ['required', 'array'],
-            'layout.*' => ['required', 'array'],
-            'layout.*.*' => ['required', 'string', 'max:50'],
+            'name'         => ['required', 'string', 'max:255'],
+            'location'     => ['nullable', 'string', 'max:255'],
+            'start_date'   => ['required', 'date'],
+            'end_date'     => ['required', 'date', 'after_or_equal:start_date'],
+            'layout'       => ['required', 'array'],
+            'layout.*'     => ['required', 'array'],
+            'layout.*.*'   => ['required', 'string', 'max:50'],
             'organizer_id' => ['nullable', 'exists:users,id'],
+            'stall_price'  => ['nullable', 'numeric', 'min:0'],
         ]);
 
         $layout = array_values(array_map(function ($row) {
             return array_values($row);
         }, $data['layout']));
 
-        BazaarEvent::where('is_active', true)->update(['is_active' => false]);
-
         $organizerId = $data['organizer_id'] ?? auth()->id();
+        $stallPrice  = (float) ($data['stall_price'] ?? 150000);
 
-        if (auth()->user() && !auth()->user()->isAdmin() && !auth()->user()->isOrganizer()) {
-            abort(403);
-        }
-
-        BazaarEvent::create([
-            'name' => $data['name'],
-            'location' => $data['location'] ?? null,
-            'start_date' => $data['start_date'],
-            'end_date' => $data['end_date'],
-            'layout' => $layout,
-            'is_active' => true,
+        $event = BazaarEvent::create([
+            'name'         => $data['name'],
+            'location'     => $data['location'] ?? null,
+            'start_date'   => $data['start_date'],
+            'end_date'     => $data['end_date'],
+            'layout'       => $layout,
+            'is_active'    => true,
             'organizer_id' => $organizerId,
         ]);
 
-        return redirect()->route('admin.dashboard')->with('success', 'Event bazar berhasil dibuat dan denah aktif diperbarui.');
+        // Buat stall otomatis dari layout, linked ke event ini
+        $stallNumbers = collect($layout)->flatten()->unique()->filter();
+        foreach ($stallNumbers as $stallNumber) {
+            Stall::create([
+                'bazaar_event_id' => $event->id,
+                'stall_number'    => $stallNumber,
+                'price'           => $stallPrice,
+                'status'          => 'available',
+            ]);
+        }
+
+        $count = $stallNumbers->count();
+        return redirect()->route('admin.dashboard')
+            ->with('success', "Event \"{$event->name}\" berhasil dibuat dengan {$count} stand.");
     }
 
     public function activateEvent(BazaarEvent $event)
@@ -250,7 +254,7 @@ class BookingController extends Controller
         }
 
         $headers = [
-            'Content-Type' => $document->mime_type ?: 'application/octet-stream',
+            'Content-Type'        => $document->mime_type ?: 'application/octet-stream',
             'Content-Disposition' => 'inline; filename="' . $document->document_name . '"',
         ];
 
