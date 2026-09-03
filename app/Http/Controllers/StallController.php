@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\BazaarEvent;
+use Illuminate\Support\Facades\Schema;
 use App\Models\Stall;
 use App\Services\BookingService;
 use Illuminate\Http\Request;
@@ -26,7 +27,7 @@ class StallController extends Controller
         $activeEvent = null;
 
         try {
-            if (schema_has_table('bazaar_events')) {
+            if (Schema::hasTable('bazaar_events')) {
                 $activeEvent = BazaarEvent::with('organizer')->where('is_active', true)->latest('start_date')->first();
             }
         } catch (\Throwable $e) {

@@ -75,7 +75,9 @@ export default function Dashboard({ stats = {}, bookings = [], events = [] }) {
             start_date: eventForm.data.start_date,
             end_date: eventForm.data.end_date,
             layout: layout,
-        })).post(route('admin.events.store'), {
+        }));
+
+        eventForm.post(route('admin.events.store'), {
             preserveScroll: true,
             onSuccess: () => {
                 alert('✓ Event bazar berhasil dibuat dan denah aktif diperbarui.');
